@@ -18,18 +18,45 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ persona, onEndSession, on
   const chatInstance = useRef<Chat | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Chat
+  // Initialize Chat with dynamic greeting
   useEffect(() => {
-    chatInstance.current = createDonorChat(persona);
-    // Initial greeting from the system/persona could be triggered here if desired, 
-    // but usually user starts or we just wait.
-    // Let's add a system welcome message (not from API) to set the stage.
-    setMessages([{
-      id: 'system-1',
-      role: 'model',
-      text: `*Adjusts glasses* Hello. I'm ${persona.name}. I understand you wanted to speak with me about a potential opportunity? I have about 10 minutes.`,
-      timestamp: new Date()
-    }]);
+    const initChat = async () => {
+      setMessages([]);
+      setIsTyping(true);
+      
+      chatInstance.current = createDonorChat(persona);
+
+      try {
+        // Trigger the AI to generate the opening line based on its persona
+        const response = await chatInstance.current.sendMessage({
+          message: `[SYSTEM: The simulation is starting. You are ${persona.name}. The fundraiser has just arrived. Greet them authentically in character to start the conversation.]`
+        });
+        
+        const greeting = response.text;
+        
+        if (greeting) {
+          setMessages([{
+            id: 'init-' + Date.now(),
+            role: 'model',
+            text: greeting,
+            timestamp: new Date()
+          }]);
+        }
+      } catch (error) {
+        console.error("Failed to generate opening greeting:", error);
+        // Fallback greeting if API fails
+        setMessages([{
+          id: 'init-fallback',
+          role: 'model',
+          text: `*Nods* Hello. I'm ${persona.name}. Please, go ahead.`,
+          timestamp: new Date()
+        }]);
+      } finally {
+        setIsTyping(false);
+      }
+    };
+
+    initChat();
   }, [persona]);
 
   const scrollToBottom = () => {

@@ -19,6 +19,7 @@ export const createDonorChat = (persona: Persona): Chat => {
       Name: ${persona.name}
       Role: ${persona.role}
       Personality: ${persona.description}
+      Character Instructions: ${persona.systemInstruction}
       
       INSTRUCTIONS:
       1. Act strictly as this character. Do not break character.
@@ -26,7 +27,6 @@ export const createDonorChat = (persona: Persona): Chat => {
       3. Respond naturally to their pitch. Ask tough questions if your character is skeptical. Be warm if your character is generous.
       4. Keep responses concise (under 3-4 sentences) like a real conversation, unless a long explanation is necessary.
       5. If the pitch is vague, press for details.
-      6. At the very start, wait for the user to greet you or start the pitch.
       `,
       temperature: 0.7, // Creative but grounded in character
     },

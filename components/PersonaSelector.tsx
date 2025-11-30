@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Persona } from '../types';
-import { Briefcase, TrendingUp, Heart, Building2, GraduationCap, Zap, Coffee, Plus, X, Save, Trash2, UserPlus } from 'lucide-react';
+import { Briefcase, TrendingUp, Heart, Building2, GraduationCap, Zap, Coffee, Plus, X, Save, Trash2, UserPlus, Filter, Search } from 'lucide-react';
 
 interface PersonaSelectorProps {
   onSelect: (persona: Persona) => void;
@@ -84,6 +84,9 @@ const getRoleIcon = (role: string) => {
 const PersonaSelector: React.FC<PersonaSelectorProps> = ({ onSelect }) => {
   const [customPersonas, setCustomPersonas] = useState<Persona[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterDifficulty, setFilterDifficulty] = useState<'All' | 'Easy' | 'Medium' | 'Hard'>('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const [newPersona, setNewPersona] = useState<Partial<Persona>>({
     difficulty: 'Medium',
     name: '',
@@ -143,16 +146,69 @@ const PersonaSelector: React.FC<PersonaSelectorProps> = ({ onSelect }) => {
     }
   };
 
+  const filterPersona = (p: Persona) => {
+    const matchesDifficulty = filterDifficulty === 'All' || p.difficulty === filterDifficulty;
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery || 
+                          p.name.toLowerCase().includes(searchLower) || 
+                          p.role.toLowerCase().includes(searchLower) || 
+                          p.description.toLowerCase().includes(searchLower);
+    
+    return matchesDifficulty && matchesSearch;
+  };
+
+  const filteredCustom = customPersonas.filter(filterPersona);
+  const filteredDefault = DEFAULT_PERSONAS.filter(filterPersona);
+
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="text-center mb-10">
+      <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-slate-800 mb-4">Choose Your Donor</h1>
         <p className="text-slate-600 text-lg">Select a persona to practice your pitch with, or create your own custom scenario.</p>
       </div>
 
+      {/* Search and Filter Controls */}
+      <div className="flex flex-col items-center gap-4 mb-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        
+        {/* Search Bar */}
+        <div className="relative w-full max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search size={20} className="text-slate-400" />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-full leading-5 bg-white placeholder-slate-400 focus:outline-none focus:placeholder-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm transition-shadow"
+            placeholder="Search personas by name, role, or keywords..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Difficulty Filter */}
+        <div className="bg-white p-1.5 rounded-full border border-slate-200 shadow-sm flex items-center gap-1 overflow-x-auto max-w-full">
+          <div className="px-3 py-1.5 flex items-center gap-2 text-slate-400 border-r border-slate-100 mr-1 shrink-0">
+            <Filter size={16} />
+            <span className="text-xs font-semibold uppercase tracking-wider hidden sm:block">Filter</span>
+          </div>
+          {(['All', 'Easy', 'Medium', 'Hard'] as const).map((level) => (
+            <button
+              key={level}
+              onClick={() => setFilterDifficulty(level)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                filterDifficulty === level
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-white text-slate-600 hover:bg-slate-50 hover:text-indigo-600'
+              }`}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         
-        {/* Create New Persona Card */}
+        {/* Create New Persona Card - Always visible */}
         <button
           onClick={() => setIsModalOpen(true)}
           className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-300 group min-h-[350px]"
@@ -167,11 +223,11 @@ const PersonaSelector: React.FC<PersonaSelectorProps> = ({ onSelect }) => {
         </button>
 
         {/* Custom Personas */}
-        {customPersonas.map((persona) => (
+        {filteredCustom.map((persona) => (
           <div
             key={persona.id}
             onClick={() => onSelect(persona)}
-            className="relative flex flex-col items-center p-6 bg-white rounded-2xl shadow-sm border-2 border-indigo-100 hover:border-indigo-500 hover:shadow-md transition-all duration-300 group text-left h-full cursor-pointer"
+            className="relative flex flex-col items-center p-6 bg-white rounded-2xl shadow-sm border-2 border-indigo-100 hover:border-indigo-500 hover:shadow-md transition-all duration-300 group text-left h-full cursor-pointer animate-in fade-in zoom-in-95 duration-300"
           >
             <button 
               onClick={(e) => handleDeleteCustomPersona(e, persona.id)}
@@ -208,11 +264,11 @@ const PersonaSelector: React.FC<PersonaSelectorProps> = ({ onSelect }) => {
         ))}
 
         {/* Default Personas */}
-        {DEFAULT_PERSONAS.map((persona) => (
+        {filteredDefault.map((persona) => (
           <button
             key={persona.id}
             onClick={() => onSelect(persona)}
-            className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-sm border-2 border-transparent hover:border-indigo-500 hover:shadow-md transition-all duration-300 group text-left h-full"
+            className="flex flex-col items-center p-6 bg-white rounded-2xl shadow-sm border-2 border-transparent hover:border-indigo-500 hover:shadow-md transition-all duration-300 group text-left h-full animate-in fade-in zoom-in-95 duration-300"
           >
             <div className="relative mb-4 shrink-0">
                <img 
@@ -240,6 +296,14 @@ const PersonaSelector: React.FC<PersonaSelectorProps> = ({ onSelect }) => {
             </span>
           </button>
         ))}
+        
+        {/* Empty State */}
+        {filteredDefault.length === 0 && filteredCustom.length === 0 && (
+           <div className="col-span-full py-12 text-center text-slate-400">
+             <p className="text-lg font-medium mb-1">No personas found</p>
+             <p className="text-sm">Try adjusting your search or filter criteria.</p>
+           </div>
+        )}
       </div>
 
       {/* Creation Modal */}
